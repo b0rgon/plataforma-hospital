@@ -1,0 +1,76 @@
+﻿@using BlazorApp.Services;
+@using DtoModels;
+@using System.Globalization;
+
+@page "/consultas_pacientes"
+
+@inject ApiService apiService
+@inject IJSRuntime JS
+
+<h3>Consultas Programadas</h3>
+
+@if (consultas_pacientes == null)
+{
+    <p>Aguarde...</p>
+}
+else if (consultas_pacientes.Count == 0)
+{
+    <p>Nenhuma consulta programada.</p>
+}
+else
+{
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th scope="col">Número de Processo</th>
+                <th scope="col">Nome do Paciente</th>
+                <th scope="col">Número da Consulta</th>
+                <th scope="col">Especialidade</th>
+                <th scope="col">Data</th>
+                <th scope="col">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var cp in consultas_pacientes)
+            {
+                <tr>
+                    <td>@cp.IdPaciente</td>
+                    <td>@cp.NomePaciente</td>
+                    <td>@cp.IdConsulta</td>
+                    <td>@cp.Especialidade</td>
+                    <td>@Data_Consulta(cp.DataConsulta)</td>
+                    @if (cp.DataConsulta < DateTime.Now) // só é possível ver relatório se já passarmos a data da consulta.
+                    {
+                        <td>
+                            <button @onclick="() => VerRelatorio(cp)">Ver Relatório</button>
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Consulta_PacienteDto> consultas_pacientes;
+
+    protected override async Task OnInitializedAsync()
+    {
+        consultas_pacientes = await apiService.GetConsultasPacientes() ?? new List<Consulta_PacienteDto>();
+    }
+
+    private string Data_Consulta(DateTime dataConsulta)
+    {
+        string dia = dataConsulta.ToString("dddd", new CultureInfo("pt-PT"));
+        string data = dataConsulta.ToString("dd/MM/yyyy");
+        string hora = dataConsulta.ToString("HH:mm");
+
+        return $"{dia}, {data}, {hora}";
+    }
+
+    private void VerRelatorio(Consulta_PacienteDto cp)
+    {
+        var consultas = consultas_pacientes.Where(con => con.IdPaciente == cp.IdPaciente).ToList();
+        apiService.DownloadPDF(JS, $"Relatório_Consulta_{cp.IdConsulta}_{cp.IdPaciente}.pdf", consultas);
+    }
+}

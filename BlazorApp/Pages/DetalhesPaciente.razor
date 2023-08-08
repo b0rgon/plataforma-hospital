@@ -1,0 +1,75 @@
+﻿@using BlazorApp.Services;
+@using DtoModels;
+
+@page "/pacientes/detalhes_paciente/{id:int}"
+
+@inject ApiService apiService
+
+<h3>Detalhes do Paciente</h3>
+
+@if (paciente == null)
+{
+    <p>Aguarde...</p>
+} 
+else
+{
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th scope="col">Número de Processo</th>
+                <th scope="col">Nome</th>
+                <th scope="col">Sexo</th>
+                <th scope="col">Data de Nascimento</th>
+            </tr>
+        </thead>
+        <tr>
+            <td>@paciente.Num_Processo</td>
+            <td>@paciente.Nome</td>
+            <td>@paciente.Genero</td>
+            <td>@paciente.DataNascimento</td>
+        </tr>
+    </table>
+
+    <h3>Histórico de Consultas</h3>
+
+    // consultas que o paciente teve
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">Número da Consulta</th>
+                    <th scope="col">Especialidade</th>
+                    <th scope="col">Data da Consulta</th>
+                </tr>
+            </thead>
+        @foreach (var cp in ListaConsultasPaciente(paciente.Num_Processo))
+            {
+                <tr>
+                    <td>@cp.IdConsulta</td>
+                    <td>@cp.Especialidade</td>
+                    <td>@cp.DataConsulta</td>
+                </tr>
+            }
+        </table>
+}
+
+@code {
+    private PacienteDto paciente;
+    private List<Consulta_PacienteDto> consultasAgendadas;
+
+    [Parameter]
+    public int id { get; set; }
+
+    [Inject]
+    private NavigationManager _navigationManager { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        paciente = await apiService.GetPaciente(id);
+        consultasAgendadas = await apiService.GetConsultasPacientes();
+    }
+
+    private List<Consulta_PacienteDto> ListaConsultasPaciente(int idPaciente)
+    {
+        return consultasAgendadas.Where(con => con.IdPaciente == idPaciente).ToList();
+    }
+}

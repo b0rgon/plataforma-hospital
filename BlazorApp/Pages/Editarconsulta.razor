@@ -1,0 +1,54 @@
+﻿@using BlazorApp.Services;
+@using DtoModels;
+
+@page "/consultas/editarconsulta/{id:int}"
+
+@inject ApiService apiService
+
+<h3>Editar Consulta</h3>
+
+@if(consulta == null) {
+    <p>Aguarde...</p>
+}
+else {
+    <EditForm Model="consulta" OnValidSubmit="AtualizarConsulta">
+        <div class="form-group">
+            <label for="DataConsulta">Data da Consulta</label>
+            <input type="datetime-local" min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" max="@DateTime.Now.AddYears(1).ToString("yyyy-MM-ddTHH:mm")" class="form-control" id="DataConsulta" @bind="consulta.DataConsulta" />
+        </div>
+        <div class="form-group">
+            <label>Especialidade</label>
+            <div class="form-check">
+                <input type="radio" @bind="consulta.Especialidade" @oninput="() => consulta.Especialidade = ConsultaDto._Especialidade.Medicina" /> Medicina
+            </div>
+            <div class="form-check">
+                <input type="radio" @bind="consulta.Especialidade" @oninput="() => consulta.Especialidade = ConsultaDto._Especialidade.Ortopedia" /> Ortopedia
+            </div>
+            <div class="form-check">
+                <input type="radio" @bind="consulta.Especialidade" @oninput="() => consulta.Especialidade = ConsultaDto._Especialidade.Oftalmologia" /> Oftalmologia
+            </div>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+    </EditForm>
+}
+
+@code {
+    private ConsultaDto consulta;
+
+    [Parameter]
+    public int id { get; set; }
+
+    [Inject]
+    private NavigationManager _navigationManager { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        consulta = await apiService.GetConsulta(id);
+    }
+
+    private async Task AtualizarConsulta()
+    {
+        await apiService.UpdateConsulta(id, consulta);
+        _navigationManager.NavigateTo("/consultas");
+    }
+}

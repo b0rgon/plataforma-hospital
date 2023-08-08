@@ -1,0 +1,105 @@
+﻿@page "/consultas/marcacao/{id:int}"
+
+@using BlazorApp.Services
+@using DtoModels
+
+@inject ApiService apiService
+@inject NavigationManager _navigationManager
+
+<h3>Marcar Consulta</h3>
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Data Disponível</th>
+            <th scope="col">Especialidade</th>
+        </tr>
+    </thead>
+    <tr>
+        <td>@consulta.Id</td>
+        <td>@consulta.DataConsulta</td>
+        <td>@consulta.Especialidade</td>
+    </tr>
+</table>
+
+<button class="btn btn-primary" @onclick="MostrarModalPacientes">Procurar Paciente</button>
+
+@if (showPacientesModal)
+{
+    <div class="modal fade show" style="display: block; background-color: rgba(0, 0, 0, 0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Selecionar Paciente</h5>
+                    <button type="button" class="close" @onclick="FecharModalPacientes">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    @if (pacientes == null)
+                    {
+                        <p>Aguarde...</p>
+                    }
+                    else
+                    {
+                        <ul>
+                            @foreach (var paciente in pacientes)
+                            {
+                                <li>
+                                    <button @onclick="() => SelecionarPacienteParaConsulta(paciente.Num_Processo)">
+                                        @paciente.Num_Processo - @paciente.Nome
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="FecharModalPacientes">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if(marcacaoSucesso)
+{
+    <div class="alert alert-success" role="alert">
+        Consulta marcada com sucesso
+    </div>
+}
+
+@code {
+    private ConsultaDto consulta;
+    private List<PacienteDto> pacientes = new List<PacienteDto>();
+    private bool showPacientesModal = false;
+    private bool marcacaoSucesso = false;
+
+    [Parameter]
+    public int id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        consulta = await apiService.GetConsulta(id);
+    }
+
+    private async Task MostrarModalPacientes()
+    {
+        showPacientesModal = true;
+        pacientes = await apiService.GetPacientes();
+        StateHasChanged(); // adicionei isto porque a lista de clientes não estava a aparecer logo
+    }
+
+    private void FecharModalPacientes()
+    {
+        showPacientesModal = false;
+    }
+
+    private async Task SelecionarPacienteParaConsulta(int numProcesso)
+    {
+        await apiService.MarcarConsulta(id, numProcesso);
+        marcacaoSucesso = true;
+        FecharModalPacientes();
+    }
+}

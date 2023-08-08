@@ -1,0 +1,136 @@
+﻿@using BlazorApp.Services;
+@using DtoModels;
+@using System.Globalization;
+
+
+@page "/consultas"
+
+@inject ApiService apiService
+
+<h3>Lista de Consultas</h3>
+
+@if (consultas == null)
+{
+    <p>Aguarde...</p>
+}
+else
+{
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">Data</th>
+                <th scope="col">Especialidade</th>
+                <th scope="col">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var consulta in consultas)
+            {
+                <tr>
+                    <td>@consulta.Id</td>
+                    <td>@Data_Consulta(consulta.DataConsulta)</td> @*apresenta a data da consulta de maneira mais legível*@
+                    <td>@consulta.Especialidade</td>
+                    <td>
+                        <button @onclick="() => EditarConsulta(consulta.Id)">Editar</button>
+                        @if(ConsultaAgendada(consulta.Id)) @*verifica se a consulta já está agendada. se estiver torna-se indisponível para nova marcação*@
+                        {
+                            <button disabled>Marcar Consulta</button>
+                        } else
+                        {
+                            <button @onclick="() => MarcacaoConsulta(consulta.Id)">Marcar Consulta</button>
+                        }
+                        <button class="btn btn-danger" @onclick="() => RemoverConsulta(consulta.Id)">Remover</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <h4>Adicionar Consulta</h4>
+
+    <EditForm Model="novaConsulta" OnValidSubmit="() => AdicionarConsulta(novaConsulta)">
+        <div class="form-group">
+            <label for="DataConsulta">Data e Hora</label>
+            <input type="datetime-local" min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" max="@DateTime.Now.AddYears(1).ToString("yyyy-MM-ddTHH:mm")"  class="form-control" id="DataConsulta" @bind="novaConsulta.DataConsulta"/>
+        </div>
+        <div class="form-group">
+            <label>Especialidade</label>
+            <div class="form-check">
+                <input type="radio" @bind="novaConsulta.Especialidade" @oninput="() => novaConsulta.Especialidade = ConsultaDto._Especialidade.Medicina" /> Medicina
+            </div>
+            <div class="form-check">
+                <input type="radio" @bind="novaConsulta.Especialidade" @oninput="() => novaConsulta.Especialidade = ConsultaDto._Especialidade.Ortopedia" /> Ortopedia
+            </div>
+            <div class="form-check">
+                <input type="radio" @bind="novaConsulta.Especialidade" @oninput="() => novaConsulta.Especialidade = ConsultaDto._Especialidade.Oftalmologia" /> Oftalmologia
+            </div>
+            <button type="submit" class="btn btn-primary">Adicionar</button>
+        </div>
+    </EditForm>
+}
+
+@code {
+    ConsultaDto novaConsulta = new ConsultaDto();
+    PacienteDto paciente = new PacienteDto();
+    private List<ConsultaDto> consultas = new List<ConsultaDto>();
+    private List<Consulta_PacienteDto>? consultasAgendadas;
+
+    [Inject]
+    private NavigationManager _navigationManager { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await AtualizarListaConsultas();
+    }
+
+    private async Task AtualizarListaConsultas()
+    {
+        consultas = await apiService.GetConsultas();
+        consultasAgendadas = await apiService.GetConsultasPacientes();
+        StateHasChanged();
+    }
+
+    private async Task AdicionarConsulta(ConsultaDto consulta)
+    {
+        novaConsulta = await apiService.AddConsulta(consulta);
+        if (novaConsulta != null)
+            consultas.Add(novaConsulta);
+
+        await AtualizarListaConsultas();
+    }
+
+    private async Task EditarConsulta(int id)
+    {
+        _navigationManager.NavigateTo($"/consultas/editarconsulta/{id}");
+        await AtualizarListaConsultas();
+    }
+
+    private async Task RemoverConsulta(int id)
+    {
+        await apiService.DeleteConsulta(id);
+
+        consultas.RemoveAll(c => c.Id == id);
+        await AtualizarListaConsultas();
+    }
+
+    private async Task MarcacaoConsulta(int id)
+    {
+        _navigationManager.NavigateTo($"/consultas/marcacao/{id}");
+        await AtualizarListaConsultas();
+    }
+
+    private string Data_Consulta(DateTime dataConsulta)
+    {
+        string dia = dataConsulta.ToString("dddd", new CultureInfo("pt-PT"));
+        string data = dataConsulta.ToString("dd/MM/yyyy");
+        string hora = dataConsulta.ToString("HH:mm");
+
+        return $"{dia}, {data}, {hora}";
+    }
+
+    private bool ConsultaAgendada(int idConsulta)
+    {
+        return consultasAgendadas.Any(con => con.IdConsulta == idConsulta);
+    }
+}
