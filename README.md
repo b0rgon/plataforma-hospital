@@ -4,7 +4,7 @@ Aplicação desenvolvida para a gestão de pacientes num contexto hospitalar.
 
 ## Funcionalidades
 
-- **Gestão de Pacientes:** Adicione, edite e remova informações de pacientes de maneira fácil e organizada.
+- **Gestão de Pacientes:** Adicione, edite e remova informações de pacientes.
 
 - **Gestão e Agendamento de Consultas:** Marque, edite e cancele consultas.
 
