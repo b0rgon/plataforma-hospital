@@ -1,6 +1,6 @@
-# Plataforma de Gestão de Pacientes Hospitalares
+# Plataforma de Gestão de Pacientes
 
-A **PlataformaDoentes** é uma aplicação desenvolvida para a gestão de pacientes num contexto hospitalar.
+Aplicação desenvolvida para a gestão de pacientes num contexto hospitalar.
 
 ## Funcionalidades
 
